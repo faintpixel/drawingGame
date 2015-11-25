@@ -19,7 +19,7 @@ namespace SignalRTest
         /*
         v1
         [X] fix page links
-        [ ] add a clear button
+        [X] add a clear button
         [ ] add a way to start a new round
         [ ] add an eraser
         [X] allow clicking to join room
@@ -62,6 +62,24 @@ namespace SignalRTest
         {
             // TO DO - don't trust the passed in position... get it from the game
             Clients.Group(User_RoomId[Context.ConnectionId], Context.ConnectionId).hideDrawing(position);
+        }
+
+        public void ClearMyArea(int position)
+        {
+            // TO DO - don't trust the passed in position... get it from the game
+            Clients.Group(User_RoomId[Context.ConnectionId]).clearDrawing(position, true);
+        }
+
+        public void ClearAll()
+        {
+            string roomId = User_RoomId[Context.ConnectionId];
+            ExquisiteCorpse game = RoomId_Game[roomId];
+            if (game.HasStarted == false)
+            {
+                Clients.Group(roomId).clearDrawing(0, false);
+                Clients.Group(roomId).clearDrawing(1, false);
+                Clients.Group(roomId).clearDrawing(2, false);
+            }
         }
 
         private List<string> GetOpenGames()

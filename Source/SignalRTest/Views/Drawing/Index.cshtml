@@ -8,7 +8,7 @@
 <div id="LobbyContainer">
     <div id="CreateOrJoinGame">
         Join or Create Game: <input type="text" id="GameName" /><br/>
-        <button id="JoinGameButton" type="button" onclick="Lobby.joinOrCreateGame();" style="display:none;">Join or Create Game</button>
+        <button id="JoinGameButton" type="button" onclick="Lobby.joinOrCreateGame();" style="display:none;">Join</button>
     </div>
     <div id="OpenGames">
         <h3>Open Games</h3>
@@ -27,6 +27,8 @@
     </div>
     <button id="ShowDrawing" type="button" onclick="Game.showMyArea();">Reveal My Area</button>
     <button id="HideDrawing" type="button" onclick="Game.hideMyArea();">Hide My Area</button>
+    <button id="ClearMyArea" type="button" onclick="Game.clearMyArea();">Clear My Area</button>
+    <button id="ClearAll" type="button" onclick="Game.clearAll();">Clear</button>
     <ul id="participantList"></ul>
 </div>
 
@@ -119,6 +121,7 @@
         drawing.client.addPoint = Game.addPoint;
         drawing.client.revealDrawing = Game.revealDrawing;
         drawing.client.hideDrawing = Game.hideDrawing;
+        drawing.client.clearDrawing = Game.clearDrawing;
 
         Game.canvasContext.fillText("Waiting for more people to join...", 10, 10);
         Game.canvasContext.fillText("Drawing will reset once 3 people are here.", 10, 30);
@@ -144,6 +147,8 @@
             $("#Position3Hider").show();
 
         $("#ShowDrawing").show();
+        $("#ClearAll").hide();
+        $("#ClearMyArea").show();
     };
 
     Game.updateParticipants = function (participants) {
@@ -228,6 +233,11 @@
     Game.clearCanvas = function () {
         Game.canvasContext.clearRect(0, 0, Game.canvas.width, Game.canvas.height);
 
+        Game.drawPlayerAreas(); // TO DO - figure out why i need to draw it twice to be darker
+        Game.drawPlayerAreas();
+    };
+
+    Game.drawPlayerAreas = function () {
         Game.drawLine(300, 5, 300, 480);
         Game.drawLine(600, 5, 600, 480);
     };
@@ -274,7 +284,23 @@
         else if (position == 2)
             $("#Position3Hider").show();
     };
- 
+
+    Game.clearMyArea = function () {
+        drawing.server.clearMyArea(Game.position);
+    }
+
+    Game.clearDrawing = function (position, drawAreas) {
+        var sectionWidth = 300;
+        var offsetX = 300 * position;
+
+        Game.canvasContext.clearRect(offsetX, 0, offsetX + 300, Game.canvas.height);
+        if(drawAreas)
+            Game.drawPlayerAreas();
+    };
+
+    Game.clearAll = function () {
+        drawing.server.clearAll();
+    };
     
 
 </script>
