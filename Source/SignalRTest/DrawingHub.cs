@@ -17,15 +17,7 @@ namespace SignalRTest
         private readonly string LOBBY_GROUP = "lobby";
 
         /*
-        v1
-        [X] fix page links
-        [X] add a clear button
-        [ ] add a way to start a new round
-        [ ] add an eraser
-        [X] allow clicking to join room
-
-        [X] throw it up on github
-        [ ] allow private rooms?
+        [ ] make the eraser suck less
         [ ] Make the page layout nicer
         [ ] Refactor    
         [ ] save to gallery

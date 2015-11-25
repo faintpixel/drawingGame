@@ -25,6 +25,10 @@
         <div id="Position3Hider" class="canvasHider"></div>
         <canvas id="DrawingCanvas" width="900" height="480" style="border-style:solid;border-width:1px;border-color:black;"></canvas>
     </div>
+    <div id="DrawingTools">
+        <label><input type="radio" name="drawingTool" value="Draw" onclick="Game.selectDrawTool();" checked="checked" /> Draw</label><br />
+        <label><input type="radio" name="drawingTool" value="Erase" onclick="Game.selectEraseTool();" /> Erase</label><br />
+    </div>
     <button id="ShowDrawing" type="button" onclick="Game.showMyArea();">Reveal My Area</button>
     <button id="HideDrawing" type="button" onclick="Game.hideMyArea();">Hide My Area</button>
     <button id="ClearMyArea" type="button" onclick="Game.clearMyArea();">Clear My Area</button>
@@ -95,9 +99,11 @@
         Game.previousY = 0;
         Game.currentX = 0;
         Game.currentY = 0;
+        Game.eraserSelected = false;
         Game.isDrawing = false;
         Game.strokeStyle = "black";
         Game.lineWidth = 2;
+        Game.eraseWidth = 20;
         Game.name = "unnamed";
         Game.drawingBoundaries = {
             startX: 0,
@@ -216,9 +222,17 @@
     };
 
     Game.addPoint = function (x, y) {
+        var strokeStyle = Game.strokeStyle;
+        var lineWidth = Game.lineWidth;
+
+        if (Game.eraserSelected) {
+            strokeStyle = "white";
+            lineWidth = Game.eraseWidth;
+        }
+
         Game.canvasContext.beginPath();
-        Game.canvasContext.fillStyle = Game.strokeStyle;
-        Game.canvasContext.fillRect(x, y, 2, 2);
+        Game.canvasContext.fillStyle = strokeStyle;
+        Game.canvasContext.fillRect(x, y, lineWidth, lineWidth);
         Game.canvasContext.closePath();
     };
 
@@ -227,7 +241,15 @@
     };
 
     Game.draw = function () {
-        drawing.server.draw(Game.previousX, Game.previousY, Game.currentX, Game.currentY, Game.strokeStyle, Game.lineWidth);
+        var strokeStyle = Game.strokeStyle;
+        var lineWidth = Game.lineWidth;
+
+        if (Game.eraserSelected) {
+            strokeStyle = "white";
+            lineWidth = Game.eraseWidth;
+        }
+
+        drawing.server.draw(Game.previousX, Game.previousY, Game.currentX, Game.currentY, strokeStyle, lineWidth);
     }
 
     Game.clearCanvas = function () {
@@ -301,6 +323,15 @@
     Game.clearAll = function () {
         drawing.server.clearAll();
     };
+
+    Game.selectEraseTool = function () {
+        Game.eraserSelected = true;
+    };
+
+    Game.selectDrawTool = function () {
+        Game.eraserSelected = false;
+    };
+
     
 
 </script>
