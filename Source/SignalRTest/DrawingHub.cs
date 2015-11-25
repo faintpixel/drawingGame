@@ -24,14 +24,14 @@ namespace SignalRTest
         [ ] add an eraser
         [X] allow clicking to join room
 
-        [ ] throw it up on github
+        [X] throw it up on github
         [ ] allow private rooms?
         [ ] Make the page layout nicer
         [ ] Refactor    
         [ ] save to gallery
         [ ] flash tab when someone joins
         [ ] notification if someone leaves
-        [ ] Pad the canvas area so the drawing experience is a bit nicer
+        [ ] Pad the canvas area so the drawing experience is a bit nicer - if the mouse leaves the canvas while drawing weird things happen
         [ ] Add pressure sensitivity? http://www.wacomeng.com/web/index.html
         */
 
