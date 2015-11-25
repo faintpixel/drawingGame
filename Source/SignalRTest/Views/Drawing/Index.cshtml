@@ -7,12 +7,12 @@
 
 <div id="LobbyContainer">
     <div id="CreateOrJoinGame">
-        Username: <input type="text" id="Username" /><br/>
-        Game Name: <input type="text" id="GameName" /><br/>
-        <button id="JoinGameButton" type="button" onclick="Lobby.joinGame();" style="display:none;">Join Game</button>
+        Join or Create Game: <input type="text" id="GameName" /><br/>
+        <button id="JoinGameButton" type="button" onclick="Lobby.joinOrCreateGame();" style="display:none;">Join or Create Game</button>
     </div>
     <div id="OpenGames">
         <h3>Open Games</h3>
+        <i>Click to join!</i>
         <ul id="gameList">
         </ul>
     </div>
@@ -53,19 +53,23 @@
         drawing.client.updateLobby = Lobby.updateLobby;
     };
 
-    Lobby.joinGame = function () {
-        var username = $("#Username").val().trim();
-        if (username == "") {
-            alert("Please enter a username.");
-            return;
-        }
-
+    Lobby.joinOrCreateGame = function () {
         var gameName = $("#GameName").val().trim();
         if (gameName == "") {
             alert("Please enter a game name.");
             return;
         }
 
+        Lobby.joinGame(gameName);
+    };
+
+    Lobby.joinGame = function (gameName) {
+        var username = prompt("Enter your name", "Harry Potter");
+
+        if (username == null || username == "") {
+            alert("Please enter a username.");
+            return;
+        }
 
         // TO DO - display a waiting indicator and disable things
         drawing.server.join(gameName, username);
@@ -79,7 +83,7 @@
             $("#gameList").append("<li>No open games found. Start your own!</li>");
         else
             $.each(openGames, function (index, value) {
-                $("#gameList").append("<li>" + value + "</li>");
+                $("#gameList").append("<li><a href='#' onclick='Lobby.joinGame(\"" + value + "\");'>" + value + "</a></li>");
             });
     };
 

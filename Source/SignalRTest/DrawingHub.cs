@@ -18,12 +18,11 @@ namespace SignalRTest
 
         /*
         v1
-        [ ] fix page links
-        [ ] basic branding
+        [X] fix page links
         [ ] add a clear button
         [ ] add a way to start a new round
         [ ] add an eraser
-        [ ] allow clicking to join room
+        [X] allow clicking to join room
 
         [ ] throw it up on github
         [ ] allow private rooms?
