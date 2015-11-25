@@ -17,7 +17,6 @@ namespace SignalRTest
         private readonly string LOBBY_GROUP = "lobby";
 
         /*
-        v1:
         [ ] fix page links
         [ ] basic branding
         [ ] add a clear button
