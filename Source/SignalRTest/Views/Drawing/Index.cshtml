@@ -1,0 +1,276 @@
+﻿
+@{
+    ViewBag.Title = "Index";
+}
+
+<h2>Index</h2>
+
+<div id="LobbyContainer">
+    <div id="CreateOrJoinGame">
+        Username: <input type="text" id="Username" /><br/>
+        Game Name: <input type="text" id="GameName" /><br/>
+        <button id="JoinGameButton" type="button" onclick="Lobby.joinGame();" style="display:none;">Join Game</button>
+    </div>
+    <div id="OpenGames">
+        <h3>Open Games</h3>
+        <ul id="gameList">
+        </ul>
+    </div>
+</div>
+
+<div id="GameContainer" style="display:none;">
+    <div id="CanvasArea">
+        <div id="Position1Hider" class="canvasHider"></div>
+        <div id="Position2Hider" class="canvasHider"></div>
+        <div id="Position3Hider" class="canvasHider"></div>
+        <canvas id="DrawingCanvas" width="900" height="480" style="border-style:solid;border-width:1px;border-color:black;"></canvas>
+    </div>
+    <button id="ShowDrawing" type="button" onclick="Game.showMyArea();">Reveal My Area</button>
+    <button id="HideDrawing" type="button" onclick="Game.hideMyArea();">Hide My Area</button>
+    <ul id="participantList"></ul>
+</div>
+
+<script src="~/Scripts/jquery.signalR-2.1.2.min.js"></script>
+<script src="~/signalr/hubs"></script>
+
+<script>
+    var Lobby = {};
+    var Game = {};
+
+    var drawing;
+
+    $(document).ready(function () {
+        drawing = $.connection.drawingHub;
+        Lobby.initialize();
+        Game.initialize();
+        $.connection.hub.start().done(function () {
+            $("#JoinGameButton").show();
+            drawing.server.joinLobby();
+        });
+    });
+
+    Lobby.initialize = function () {
+        drawing.client.updateLobby = Lobby.updateLobby;
+    };
+
+    Lobby.joinGame = function () {
+        var username = $("#Username").val().trim();
+        if (username == "") {
+            alert("Please enter a username.");
+            return;
+        }
+
+        var gameName = $("#GameName").val().trim();
+        if (gameName == "") {
+            alert("Please enter a game name.");
+            return;
+        }
+
+
+        // TO DO - display a waiting indicator and disable things
+        drawing.server.join(gameName, username);
+    }
+
+    Lobby.updateLobby = function (openGames) {
+        console.log("Updating game list.");
+        $("#gameList li").remove();
+
+        if (openGames.length == 0)
+            $("#gameList").append("<li>No open games found. Start your own!</li>");
+        else
+            $.each(openGames, function (index, value) {
+                $("#gameList").append("<li>" + value + "</li>");
+            });
+    };
+
+    Game.initialize = function () {
+        Game.isDrawing = false;
+        Game.previousX = 0;
+        Game.previousY = 0;
+        Game.currentX = 0;
+        Game.currentY = 0;
+        Game.isDrawing = false;
+        Game.strokeStyle = "black";
+        Game.lineWidth = 2;
+        Game.name = "unnamed";
+        Game.drawingBoundaries = {
+            startX: 0,
+            endX: 900
+        };
+
+        Game.canvas = $("#DrawingCanvas")[0];
+        Game.canvasContext = Game.canvas.getContext("2d");
+
+        Game.canvas.addEventListener("mousemove", Game.mouseMove, false);
+        Game.canvas.addEventListener("mousedown", Game.mouseDown, false);
+        Game.canvas.addEventListener("mouseup", Game.mouseUpOrOut, false);
+        Game.canvas.addEventListener("mouseout", Game.mouseUpOrOut, false);
+
+        drawing.client.updateCanvas = Game.updateCanvas;
+        drawing.client.displayMessage = Game.displayMessage;
+        drawing.client.setPosition = Game.setPosition;
+        drawing.client.updateParticipants = Game.updateParticipants;
+        drawing.client.startGame = Game.startGame;
+        drawing.client.joinedGame = Game.joinedGame;
+        drawing.client.addPoint = Game.addPoint;
+        drawing.client.revealDrawing = Game.revealDrawing;
+        drawing.client.hideDrawing = Game.hideDrawing;
+
+        Game.canvasContext.fillText("Waiting for more people to join...", 10, 10);
+        Game.canvasContext.fillText("Drawing will reset once 3 people are here.", 10, 30);
+    };
+
+    Game.joinedGame = function (gameName) {
+        console.log("Joined game " + gameName);
+        $("#LobbyContainer").hide();
+        $("#GameContainer").show();
+    };
+
+    Game.startGame = function () {
+        console.log("Game started.");
+        Game.drawingBoundaries.startX = Game.position * 300;
+        Game.drawingBoundaries.endX = (Game.position * 300) + 300;
+        Game.clearCanvas();
+
+        if(Game.position != 0)
+            $("#Position1Hider").show();
+        if (Game.position != 1)
+            $("#Position2Hider").show();
+        if (Game.position != 2)
+            $("#Position3Hider").show();
+
+        $("#ShowDrawing").show();
+    };
+
+    Game.updateParticipants = function (participants) {
+        console.log("Updating participant list.");
+        $("#participantList li").remove();
+        $.each(participants, function (index, value) {
+            $("#participantList").append("<li>" + value + "</li>");
+        });
+    };
+
+    Game.displayMessage = function (message) {
+        alert(message);
+    };
+
+    Game.setPosition = function (pos) {
+        console.log("Setting position to " + pos);
+        Game.position = pos;
+    };
+
+    Game.updateCanvas = function (pX, pY, cX, cY, ss, lw) {
+        Game.canvasContext.beginPath();
+        Game.canvasContext.moveTo(pX, pY);
+        Game.canvasContext.lineTo(cX, cY);
+        Game.canvasContext.strokeStyle = ss;
+        Game.canvasContext.lineWidth = lw;
+        Game.canvasContext.stroke();
+        Game.canvasContext.closePath();
+    };
+
+    Game.mouseMove = function (e) {
+        if (Game.isDrawing) {
+            Game.previousX = Game.currentX;
+            Game.previousY = Game.currentY;
+            //Game.currentX = e.clientX - Game.canvas.offsetLeft;
+            //Game.currentY = e.clientY - Game.canvas.offsetTop;
+            Game.currentX = e.layerX;
+            Game.currentY = e.layerY;
+
+            if (Game.currentX > Game.drawingBoundaries.endX)
+                Game.currentX = Game.drawingBoundaries.endX;
+            else if (Game.currentX < Game.drawingBoundaries.startX)
+                Game.currentX = Game.drawingBoundaries.startX;
+
+            Game.draw();
+        }
+    };
+
+    Game.mouseDown = function (e) {
+        Game.previousX = Game.currentX;
+        Game.previousY = Game.currentY;
+        //Game.currentX = e.clientX - Game.canvas.offsetLeft;
+        //Game.currentY = e.clientY - Game.canvas.offsetTop;
+
+        Game.currentX = e.layerX;
+        Game.currentY = e.layerY;
+
+        if (Game.currentX > Game.drawingBoundaries.endX)
+            Game.currentX = Game.drawingBoundaries.endX;
+        else if (Game.currentX < Game.drawingBoundaries.startX)
+            Game.currentX = Game.drawingBoundaries.startX;
+
+        Game.isDrawing = true;
+
+        drawing.server.addPoint(Game.currentX, Game.currentY);
+    };
+
+    Game.addPoint = function (x, y) {
+        Game.canvasContext.beginPath();
+        Game.canvasContext.fillStyle = Game.strokeStyle;
+        Game.canvasContext.fillRect(x, y, 2, 2);
+        Game.canvasContext.closePath();
+    };
+
+    Game.mouseUpOrOut = function (e) {
+        Game.isDrawing = false;
+    };
+
+    Game.draw = function () {
+        drawing.server.draw(Game.previousX, Game.previousY, Game.currentX, Game.currentY, Game.strokeStyle, Game.lineWidth);
+    }
+
+    Game.clearCanvas = function () {
+        Game.canvasContext.clearRect(0, 0, Game.canvas.width, Game.canvas.height);
+
+        Game.drawLine(300, 5, 300, 480);
+        Game.drawLine(600, 5, 600, 480);
+    };
+
+    Game.drawLine = function (startX, startY, endX, endY) {
+        Game.canvasContext.setLineDash([5, 10]);
+
+        Game.canvasContext.beginPath();
+        Game.canvasContext.strokeStyle = "blue";
+        Game.canvasContext.moveTo(startX, startY);
+        Game.canvasContext.lineTo(endX, endY);
+        Game.canvasContext.stroke();
+        Game.canvasContext.closePath();
+
+        Game.canvasContext.setLineDash([]);
+    };
+ 
+    Game.showMyArea = function () {
+        drawing.server.showMyArea(Game.position);
+        $("#ShowDrawing").hide();
+        $("#HideDrawing").show();
+    };
+
+    Game.hideMyArea = function () {
+        drawing.server.hideMyArea(Game.position);
+        $("#HideDrawing").hide();
+        $("#ShowDrawing").show();
+    };
+
+    Game.revealDrawing = function (position) {
+        if (position == 0)
+            $("#Position1Hider").hide();
+        else if (position == 1)
+            $("#Position2Hider").hide();
+        else if (position == 2)
+            $("#Position3Hider").hide();
+    };
+
+    Game.hideDrawing = function (position) {
+        if (position == 0)
+            $("#Position1Hider").show();
+        else if (position == 1)
+            $("#Position2Hider").show();
+        else if (position == 2)
+            $("#Position3Hider").show();
+    };
+ 
+    
+
+</script>
