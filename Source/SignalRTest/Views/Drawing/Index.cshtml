@@ -34,6 +34,7 @@
     <button id="ClearMyArea" type="button" onclick="Game.clearMyArea();">Clear My Area</button>
     <button id="ClearAll" type="button" onclick="Game.clearAll();">Clear</button>
     <ul id="participantList"></ul>
+    <div><i id="PressureSensitivityMessage">Pressure sensitivity currently only works in browsers that have implemented <a href="http://caniuse.com/#search=pointermove">pointer events</a> (sorry)</i></div>
 </div>
 
 <script src="~/Scripts/jquery.signalR-2.1.2.min.js"></script>
@@ -113,8 +114,16 @@
         Game.canvas = $("#DrawingCanvas")[0];
         Game.canvasContext = Game.canvas.getContext("2d");
 
-        Game.canvas.addEventListener("mousemove", Game.mouseMove, false);
-        Game.canvas.addEventListener("mousedown", Game.mouseDown, false);
+        if ("onpointermove" in window && "onpointerdown" in window) {
+            Game.canvas.addEventListener("pointermove", Game.mouseMove, false);
+            Game.canvas.addEventListener("pointerdown", Game.mouseDown, false);
+            $("#PressureSensitivityMessage").hide();
+        }
+        else { 
+            Game.canvas.addEventListener("mousemove", Game.mouseMove, false);
+            Game.canvas.addEventListener("mousedown", Game.mouseDown, false);
+        }
+
         Game.canvas.addEventListener("mouseup", Game.mouseUpOrOut, false);
         Game.canvas.addEventListener("mouseout", Game.mouseUpOrOut, false);
 
@@ -198,7 +207,7 @@
             else if (Game.currentX < Game.drawingBoundaries.startX)
                 Game.currentX = Game.drawingBoundaries.startX;
 
-            Game.draw();
+            Game.draw(e.pressure);
         }
     };
 
@@ -218,18 +227,23 @@
 
         Game.isDrawing = true;
 
-        drawing.server.addPoint(Game.currentX, Game.currentY);
-    };
-
-    Game.addPoint = function (x, y) {
+        var pressure = e.pressure;
         var strokeStyle = Game.strokeStyle;
         var lineWidth = Game.lineWidth;
+        if (pressure != undefined)
+            lineWidth = Game.calculateLineWidthForPressure(pressure, 0);
 
         if (Game.eraserSelected) {
             strokeStyle = "white";
             lineWidth = Game.eraseWidth;
+            if (pressure != undefined)
+                lineWidth = Game.calculateLineWidthForPressure(pressure, 10);
         }
+                
+        drawing.server.addPoint(Game.currentX, Game.currentY, strokeStyle, lineWidth);
+    };
 
+    Game.addPoint = function (x, y, strokeStyle, lineWidth) {
         Game.canvasContext.beginPath();
         Game.canvasContext.fillStyle = strokeStyle;
         Game.canvasContext.fillRect(x, y, lineWidth, lineWidth);
@@ -240,16 +254,24 @@
         Game.isDrawing = false;
     };
 
-    Game.draw = function () {
+    Game.draw = function (pressure) {
         var strokeStyle = Game.strokeStyle;
         var lineWidth = Game.lineWidth;
-
+        if (pressure != undefined)
+            lineWidth = Game.calculateLineWidthForPressure(pressure, 0);
+        
         if (Game.eraserSelected) {
             strokeStyle = "white";
             lineWidth = Game.eraseWidth;
-        }
+            if (pressure != undefined)
+                lineWidth = Game.calculateLineWidthForPressure(pressure, 10);
+        }       
 
         drawing.server.draw(Game.previousX, Game.previousY, Game.currentX, Game.currentY, strokeStyle, lineWidth);
+    }
+
+    Game.calculateLineWidthForPressure = function(pressure, defaultSize) {
+        return defaultSize + (pressure * 5);
     }
 
     Game.clearCanvas = function () {

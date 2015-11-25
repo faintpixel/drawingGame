@@ -17,14 +17,17 @@ namespace SignalRTest
         private readonly string LOBBY_GROUP = "lobby";
 
         /*
-        [ ] make the eraser suck less
+        [ ] make the eraser suck less... can we keep the path going instead of making a new path for each update?
         [ ] Make the page layout nicer
         [ ] Refactor    
         [ ] save to gallery
         [ ] flash tab when someone joins
         [ ] notification if someone leaves
         [ ] Pad the canvas area so the drawing experience is a bit nicer - if the mouse leaves the canvas while drawing weird things happen
-        [ ] Add pressure sensitivity? http://www.wacomeng.com/web/index.html
+        [ ] Add pressure sensitivity
+            [X] IE
+            [/] Chrome - waiting on them to impelement pointer events like ie... the wacom web plugin doesn't work anymore.
+            [ ] Firefox - look into mozPressure
         */
 
         public DrawingHub()
@@ -92,14 +95,14 @@ namespace SignalRTest
             await Clients.Group(LOBBY_GROUP).updateLobby(openGames);
         }
 
-        public async Task Draw(int prevX, int prevY, int currX, int currY, string strokeStyle, int lineWidth)
+        public async Task Draw(int prevX, int prevY, int currX, int currY, string strokeStyle, decimal lineWidth)
         {
             await Clients.Group(User_RoomId[Context.ConnectionId]).updateCanvas(prevX, prevY, currX, currY, strokeStyle, lineWidth);            
         }
 
-        public async Task AddPoint(int x, int y)
+        public async Task AddPoint(int x, int y, string strokeStyle, decimal lineWidth)
         {
-            await Clients.Group(User_RoomId[Context.ConnectionId]).addPoint(x, y);
+            await Clients.Group(User_RoomId[Context.ConnectionId]).addPoint(x, y, strokeStyle, lineWidth);
         }
 
         public async Task Join(string roomId, string name)
